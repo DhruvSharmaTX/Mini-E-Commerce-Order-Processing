@@ -10,12 +10,11 @@ from backend.app.models.order_item_model import OrderItem
 from backend.app.schemas.order_schema import OrderCreate
 from backend.app.utils.id_service import unique_id
 
-
 def create_order(db: Session, order_data: OrderCreate):
     try:
         user = db.query(User).filter(User.id == order_data.user_id).first()
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=404, detail=" ot found")
 
         total_amount = 0
         products_cache = {}
@@ -25,7 +24,13 @@ def create_order(db: Session, order_data: OrderCreate):
             quantity_tracker[item.product_id] += item.quantity
 
         for product_id, total_qty in quantity_tracker.items():
-            product = db.query(Product).filter(Product.id == product_id).first()
+
+            product = (
+                db.query(Product)
+                .filter(Product.id == product_id)
+                .with_for_update() 
+                .first()
+            )
 
             if not product:
                 raise HTTPException(
@@ -52,9 +57,14 @@ def create_order(db: Session, order_data: OrderCreate):
         )
 
         db.add(new_order)
-        db.flush()  
+        db.flush()
 
-        last_item = db.query(OrderItem).order_by(desc(OrderItem.id)).first()
+        last_item = (
+            db.query(OrderItem)
+            .order_by(desc(OrderItem.id))
+            .with_for_update()
+            .first()
+        )
 
         if last_item:
             current_number = int(last_item.id.replace("OI", ""))
@@ -92,33 +102,50 @@ def create_order(db: Session, order_data: OrderCreate):
 def get_all_orders(db: Session):
     return db.query(Order).all()
 
-
 def get_order_by_id(db: Session, order_id: str):
     order = db.query(Order).filter(Order.id == order_id).first()
 
     if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
+        raise HTTPException(status_code=404, detail="not found")
 
     return order
 
 
 def cancel_order(db: Session, order_id: str):
-    order = db.query(Order).filter(Order.id == order_id).first()
 
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
+    try:
+        order = (
+            db.query(Order)
+            .filter(Order.id == order_id)
+            .with_for_update()
+            .first()
+        )
 
-    if order.status == "cancelled":
-        raise HTTPException(status_code=400, detail="Order already cancelled")
+        if not order:
+            raise HTTPException(status_code=404, detail="not found")
 
-    for item in order.items:
-        product = db.query(Product).filter(Product.id == item.product_id).first()
-        if product:
-            product.quantity += item.quantity
+        if order.status == "cancelled":
+            raise HTTPException(status_code=400, detail="already cancelled")
 
-    order.status = "cancelled"
+        for item in order.items:
 
-    db.commit()
-    db.refresh(order)
+            product = (
+                db.query(Product)
+                .filter(Product.id == item.product_id)
+                .with_for_update()
+                .first()
+            )
 
-    return order
+            if product:
+                product.quantity += item.quantity
+
+        order.status = "cancelled"
+
+        db.commit()
+        db.refresh(order)
+
+        return order
+
+    except Exception as e:
+        db.rollback()
+        raise e
