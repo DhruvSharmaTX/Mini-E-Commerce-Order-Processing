@@ -11,15 +11,37 @@ function loadUsersMenu() {
 
 async function getAllUsers() {
     const users = await apiRequest("/users/");
-    let html = "<h2>All Users</h2>";
+
+    let html = `
+        <h2>All Users</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
     users.forEach(user => {
         html += `
-            <div class="card">
-                ${user.id} - ${user.name} - ${user.email}
-            </div>
+            <tr>
+                <td>${user.id}</td>
+                <td>${user.name}</td>
+                <td>${user.email}</td>
+            </tr>
         `;
     });
-    html += `<button onclick="loadUsersMenu()">Back</button>`;
+
+    html += `
+            </tbody>
+        </table>
+        <br>
+        <button onclick="loadUsersMenu()">Back</button>
+    `;
+
     render(html);
 }
 

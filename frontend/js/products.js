@@ -12,33 +12,87 @@ function loadProductsMenu() {
 
 async function getAllProducts() {
     const products = await apiRequest("/products/");
-    let html = "<h2>All Products</h2>";
+
+    let html = `
+        <h2>All Products</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
     products.forEach(product => {
         html += `
-            <div class="card">
-                ID: ${product.id}<br>
-                Name: ${product.name}<br>
-                Price: $${product.price}<br>
-                Quantity: ${product.quantity}
-            </div>
+            <tr>
+                <td>${product.id}</td>
+                <td>${product.name}</td>
+                <td>$${product.price}</td>
+                <td>${product.quantity}</td>
+            </tr>
         `;
     });
 
-    html += `<button onclick="loadProductsMenu()">Back</button>`;
+    html += `
+            </tbody>
+        </table>
+        <br>
+        <button onclick="loadProductsMenu()">Back</button>
+    `;
+
     render(html);
 }
 
 async function getAvailableProducts() {
     const products = await apiRequest("/products/available");
-    let html = "<h2>Available Products</h2>";
-    products.forEach(product => {
+
+    let html = `
+        <h2>Available Products</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    if (products.length === 0) {
         html += `
-            <div class="card">
-                ${product.name} - Quantity: ${product.quantity}
-            </div>
+            <tr>
+                <td colspan="4" style="text-align:center;">
+                    No available products
+                </td>
+            </tr>
         `;
-    });
-    html += `<button onclick="loadProductsMenu()">Back</button>`;
+    } else {
+        products.forEach(product => {
+            html += `
+                <tr>
+                    <td>${product.id}</td>
+                    <td>${product.name}</td>
+                    <td>$${product.price}</td>
+                    <td>${product.quantity}</td>
+                </tr>
+            `;
+        });
+    }
+
+    html += `
+            </tbody>
+        </table>
+        <br>
+        <button onclick="loadProductsMenu()">Back</button>
+    `;
+
     render(html);
 }
 

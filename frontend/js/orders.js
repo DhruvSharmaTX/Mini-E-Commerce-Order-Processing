@@ -12,19 +12,39 @@ function loadOrdersMenu() {
 
 async function getAllOrders() {
     const orders = await apiRequest("/orders/");
-    let html = "<h2>All Orders</h2>";
+
+    let html = `
+        <h2>All Orders</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
     orders.forEach(order => {
         html += `
-            <div class="card">
-                ID: ${order.id}<br>
-                User ID: ${order.user_id}<br>
-                Product ID: ${order.product_id}<br>
-                Quantity: ${order.quantity}<br>
-                Status: ${order.status}
-            </div>
+            <tr>
+                <td>${order.id}</td>
+                <td>${order.user_id}</td>
+                <td>$${order.total_amount}</td>
+                <td>${order.status}</td>
+            </tr>
         `;
     });
-    html += `<button onclick="loadOrdersMenu()">Back</button>`;
+
+    html += `
+            </tbody>
+        </table>
+        <br>
+        <button onclick="loadOrdersMenu()">Back</button>
+    `;
+
     render(html);
 }
 
